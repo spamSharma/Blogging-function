@@ -1,5 +1,5 @@
 import ImageKit from "https://cdn.skypack.dev/imagekit-javascript";
-import { db, storage } from './firebase-config.js';
+import { db } from './firebase-config.js';
 import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
 
 // Initialize ImageKit client
@@ -23,10 +23,19 @@ window.handleImageUpload = async function(event) {
   const file = event.target.files[0];
   if (file && file.type.startsWith("image/")) {
     try {
+      // Fetch ImageKit authentication parameters
+      const auth = await fetch("https://blogging-function.vercel.app/api/auth").then(res => res.json());
+
+      // Upload image with authentication
       const result = await imagekit.upload({
         file,
-        fileName: file.name
+        fileName: file.name,
+        token: auth.token,
+        signature: auth.signature,
+        expire: auth.expire
       });
+
+      // Insert uploaded image into the editor
       const img = document.createElement("img");
       img.src = result.url;
       img.style.maxWidth = "100%";
@@ -37,6 +46,7 @@ window.handleImageUpload = async function(event) {
     }
   }
 }
+// Function to insert content at the cursor position
 
 function insertAtCursor(node) {
   const sel = window.getSelection();

@@ -20,7 +20,6 @@ const analytics = getAnalytics(app);
 
 // Initialize Firestore and Storage
 const db = getFirestore(app);
-const storage = getStorage(app); // ✅ ADD THIS
 
 // Export the initialized services
-export { db, storage }; // ✅ EXPORT storage
+export { db}; // ✅ EXPORT storage
