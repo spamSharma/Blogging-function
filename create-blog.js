@@ -6,8 +6,9 @@ import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/fir
 const imagekit = new ImageKit({
   publicKey: "public_dGeUs0LnIL2kLt0XbRDTNrZLcYg=",
   urlEndpoint: "https://ik.imagekit.io/y2x3yxbrx",
-  authenticationEndpoint: "https://your-vercel-project.vercel.app/api/imagekit-auth"
+  authenticationEndpoint: "https://blogging-function.vercel.app/api/auth"  // ← updated
 });
+
 
 window.format = function(command, btn) {
   document.execCommand(command, false, null);
