@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Messages - Uniment Solutions</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .navbar {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .navbar-brand {
+            font-weight: 600;
+            font-size: 1.5rem;
+        }
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .table {
+            margin-bottom: 0;
+        }
+        .table thead th {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            color: #495057;
+            font-weight: 600;
+        }
+        .table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+        .message-cell {
+            max-width: 300px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .search-box {
+            border-radius: 20px;
+            padding-left: 40px;
+            border: 1px solid #dee2e6;
+        }
+        .search-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+        }
+        .badge {
+            padding: 8px 12px;
+            border-radius: 20px;
+        }
+        .timestamp {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+        .message-modal .modal-content {
+            border-radius: 15px;
+        }
+        .message-modal .modal-header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            border-radius: 15px 15px 0 0;
+        }
+        .message-modal .modal-body {
+            padding: 20px;
+        }
+        .message-content {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 10px;
+        }
+    </style>
+    <script type="module">
+        // Import necessary Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getFirestore, collection, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDk2SyeNzOuUcrbVPKgAjBacIBxm5aXVPI",
+            authDomain: "uniment-llp.firebaseapp.com",
+            projectId: "uniment-llp",
+            storageBucket: "uniment-llp.appspot.com",
+            messagingSenderId: "271526023218",
+            appId: "1:271526023218:web:705219d953347625a66c2b",
+            measurementId: "G-6J5KWKSRG5"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Password for accessing the data
+        const password = "Sapan@123";
+
+        // Fetch and display data from Firestore
+        async function fetchData() {
+            const messagesTableBody = document.getElementById("messagesTableBody");
+            const loadingSpinner = document.getElementById("loadingSpinner");
+            const noMessagesAlert = document.getElementById("noMessagesAlert");
+
+            try {
+                loadingSpinner.style.display = "block";
+                const querySnapshot = await getDocs(collection(db, "contacts"));
+                
+                if (querySnapshot.empty) {
+                    noMessagesAlert.style.display = "block";
+                    return;
+                }
+
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-circle bg-primary text-white me-2">
+                                    ${data.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                    <div class="fw-bold">${data.name}</div>
+                                    <div class="timestamp">${data.timestamp.toDate().toLocaleString()}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>${data.email}</td>
+                        <td>${data.subject}</td>
+                        <td class="message-cell" onclick="showMessage('${data.name}', '${data.email}', '${data.subject}', '${data.message.replace(/'/g, "\\'")}')">
+                            ${data.message}
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary me-2" onclick="showMessage('${data.name}', '${data.email}', '${data.subject}', '${data.message.replace(/'/g, "\\'")}')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteMessage('${doc.id}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    `;
+                    messagesTableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error("Error fetching documents: ", error);
+                alert("Error loading messages. Please try again.");
+            } finally {
+                loadingSpinner.style.display = "none";
+            }
+        }
+
+        // Delete message function
+        window.deleteMessage = async function(messageId) {
+            if (confirm("Are you sure you want to delete this message?")) {
+                try {
+                    await deleteDoc(doc(db, "contacts", messageId));
+                    document.getElementById("messagesTableBody").innerHTML = "";
+                    fetchData();
+                } catch (error) {
+                    console.error("Error deleting message:", error);
+                    alert("Error deleting message. Please try again.");
+                }
+            }
+        };
+
+        // Show message in modal
+        window.showMessage = function(name, email, subject, message) {
+            const modal = new bootstrap.Modal(document.getElementById('messageModal'));
+            document.getElementById('modalName').textContent = name;
+            document.getElementById('modalEmail').textContent = email;
+            document.getElementById('modalSubject').textContent = subject;
+            document.getElementById('modalMessage').textContent = message;
+            modal.show();
+        };
+
+        // Search functionality
+        window.searchMessages = function() {
+            const searchText = document.getElementById('searchInput').value.toLowerCase();
+            const rows = document.querySelectorAll('#messagesTableBody tr');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchText) ? '' : 'none';
+            });
+        };
+
+        // Check password on page load
+        document.addEventListener("DOMContentLoaded", () => {
+            const enteredPassword = prompt("Please enter the password to view this content:");
+
+            if (enteredPassword === password) {
+                document.getElementById("content").style.display = "block";
+                fetchData();
+            } else {
+                alert("Incorrect password!");
+                window.location.href = "index.html";
+            }
+        });
+    </script>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-envelope-open-text me-2"></i>
+                Contact Messages
+            </a>
+        </div>
+    </nav>
+
+    <div class="container mt-4" id="content" style="display: none;">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 class="mb-0">Messages</h4>
+                    <div class="position-relative">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="searchInput" class="form-control search-box" 
+                               placeholder="Search messages..." onkeyup="searchMessages()">
+                    </div>
+                </div>
+
+                <div id="loadingSpinner" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+
+                <div id="noMessagesAlert" class="alert alert-info" style="display: none;">
+                    No messages found.
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Contact</th>
+                                <th>Email</th>
+                                <th>Subject</th>
+                                <th>Message</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="messagesTableBody">
+                            <!-- Data will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message Modal -->
+    <div class="modal fade message-modal" id="messageModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Message Details</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="fw-bold">From:</label>
+                        <div id="modalName"></div>
+                        <div id="modalEmail" class="text-muted small"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="fw-bold">Subject:</label>
+                        <div id="modalSubject"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="fw-bold">Message:</label>
+                        <div id="modalMessage" class="message-content"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
