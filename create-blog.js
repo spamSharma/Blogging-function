@@ -93,15 +93,21 @@ window.postBlog = async function() {
   let thumbnailURL = '';
   if (thumbnailFile) {
     try {
+      const auth = await fetch("https://blogging-function.vercel.app/api/auth").then(res => res.json());
+
       const thumbUpload = await imagekit.upload({
         file: thumbnailFile,
-        fileName: `thumb_${Date.now()}_${thumbnailFile.name}`
+        fileName: `thumb_${Date.now()}_${thumbnailFile.name}`,
+        token: auth.token,
+        signature: auth.signature,
+        expire: auth.expire
       });
       thumbnailURL = thumbUpload.url;
     } catch (error) {
       console.error("Thumbnail upload error:", error);
     }
   }
+
 
   try {
     await addDoc(collection(db, 'blogs'), {
